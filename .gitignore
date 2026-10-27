@@ -1,0 +1,4 @@
+.DS_Store
+*.jsonl
+pachirisu-losses.json
+node_modules/

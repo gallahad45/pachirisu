@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "P.A.C.H.I.R.I.S.U.",
+  "version": "1.15.0",
+  "description": "Showdown experience enhancer: every non-blunder play ranked by efficiency, plus cool animations. Not a bot: it never plays.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    },
+    "default_title": "P.A.C.H.I.R.I.S.U."
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://play.pokemonshowdown.com/*",
+        "https://*.psim.us/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://play.pokemonshowdown.com/*",
+        "https://*.psim.us/*"
+      ],
+      "js": [
+        "randbats.js",
+        "sets.js",
+        "sets-meta.js",
+        "teams.js",
+        "advisor.js",
+        "music.js",
+        "cinematics.js",
+        "mascot.js",
+        "history.js",
+        "copilot.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*"
+      ],
+      "matches": [
+        "https://play.pokemonshowdown.com/*",
+        "https://*.psim.us/*"
+      ]
+    }
+  ]
+}

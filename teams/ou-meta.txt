@@ -1,0 +1,61 @@
+Cinderace @ Heavy-Duty Boots
+Ability: Libero
+Tera Type: Fire
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Pyro Ball
+- U-turn
+- Court Change
+- Will-O-Wisp
+
+Kingambit @ Leftovers
+Ability: Supreme Overlord
+Tera Type: Bug
+EVs: 248 HP / 252 Atk / 8 Def
+Adamant Nature
+- Swords Dance
+- Sucker Punch
+- Iron Head
+- Low Kick
+
+Kyurem @ Assault Vest
+Ability: Pressure
+Tera Type: Ice
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Freeze-Dry
+- Earth Power
+- Ice Beam
+- Draco Meteor
+
+Landorus-Therian @ Rocky Helmet
+Ability: Intimidate
+Tera Type: Water
+EVs: 240 HP / 136 Def / 132 Spe
+Impish Nature
+- Stealth Rock
+- Earthquake
+- U-turn
+- Stone Edge
+
+Ogerpon-Wellspring @ Wellspring Mask
+Ability: Water Absorb
+Tera Type: Water
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Swords Dance
+- Ivy Cudgel
+- Power Whip
+- Knock Off
+
+Slowking-Galar @ Rocky Helmet
+Ability: Regenerator
+Tera Type: Water
+EVs: 248 HP / 252 Def / 8 SpD
+Relaxed Nature
+IVs: 0 Atk / 0 Spe
+- Sludge Bomb
+- Ice Beam
+- Flamethrower
+- Chilly Reception

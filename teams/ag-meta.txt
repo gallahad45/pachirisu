@@ -1,0 +1,60 @@
+Calyrex-Shadow @ Focus Sash
+Ability: As One (Spectrier)
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Astral Barrage
+- Nasty Plot
+- Draining Kiss
+- Psyshock
+
+Miraidon @ Choice Scarf
+Ability: Hadron Engine
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Electro Drift
+- Draco Meteor
+- Volt Switch
+- Overheat
+
+Koraidon @ Loaded Dice
+Ability: Orichalcum Pulse
+Tera Type: Fire
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Swords Dance
+- Scale Shot
+- Flare Blitz
+- Low Kick
+
+Arceus @ Silk Scarf
+Ability: Multitype
+Tera Type: Normal
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Swords Dance
+- Extreme Speed
+- Shadow Claw
+- Recover
+
+Ho-Oh @ Heavy-Duty Boots
+Ability: Regenerator
+Tera Type: Grass
+EVs: 248 HP / 8 Atk / 252 SpD
+Careful Nature
+- Sacred Fire
+- Brave Bird
+- Recover
+- Whirlwind
+
+Ting-Lu @ Leftovers
+Ability: Vessel of Ruin
+Tera Type: Poison
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Whirlwind
+- Earthquake
+- Ruination
