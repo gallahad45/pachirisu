@@ -194,8 +194,8 @@
       } else if (c && c.kind === 'switch') {
         add('anti-setup', 86, 'switch', `${sr.summary}. ${c.why}`, { target: c.name });
       } else {
-        add('anti-setup', 79, 'warn',
-          `${sr.summary}. No answer at hand (Taunt, Haze, phaze, Unaware): hit hard now to bring it into range.`);
+        add('anti-setup', 79, 'warn', sr.taunted ? `${sr.summary}.`
+          : `${sr.summary}. No answer at hand (Taunt, Haze, phaze, Unaware): hit hard now to bring it into range.`);
       }
     }
 
@@ -205,7 +205,8 @@
       const c = wr.counter;
       if (c && c.kind === 'move') add('anti-wall', 83, 'stay', `${wr.summary}. ${c.why}`, { moveName: c.name });
       else if (c && c.kind === 'switch') add('anti-wall', 83, 'switch', `${wr.summary}. ${c.why}`, { target: c.name });
-      else add('anti-wall', 60, 'warn', `${wr.summary}. No answer (Haze, phaze, Taunt, Unaware): hit it now, before it is too late.`);
+      else add('anti-wall', 60, 'warn', wr.taunted ? `${wr.summary}.`
+        : `${wr.summary}. No answer (Haze, phaze, Taunt, Unaware): hit it now, before it is too late.`);
     }
 
     /* 14. Stall: ce qui te ronge chaque tour, et comment en sortir. */
@@ -227,6 +228,20 @@
       if (st.net > 0) {
         add('residual', 45, 'warn', `You lose about ${Math.round(st.net)}% a turn (${what})`
           + (st.turnsLeft !== null ? `, that is ${st.turnsLeft} turn${st.turnsLeft > 1 ? 's' : ''} before you fall doing nothing.` : '.'));
+      }
+    }
+
+    /* 15. Endormi: ses coups ne partent pas tant qu'il dort. */
+    const zz = ctx.asleep;
+    if (zz && zz.sleepTalk) {
+      add('asleep', 90, 'stay', `${me.name} is asleep: Sleep Talk calls one of its other moves.`, { moveName: 'Sleep Talk' });
+    } else if (zz && zz.wake < 1) {
+      const odds = zz.wake ? `${Math.round(zz.wake * 100)}% chance to wake up this turn` : 'it can\'t wake up this turn';
+      const sw = (ctx.switches || []).find((s) => !s.dies && !s.justLeft);
+      if ((theyMightKO || incoming >= 40 || ctx.setupRisk) && sw) {
+        add('asleep', 89, 'switch', `${me.name} is asleep (${odds}) and takes hits without answering: ${sw.name} takes them instead.`, { target: sw.name });
+      } else {
+        add('asleep', 70, 'warn', `${me.name} is asleep (${odds}). Staying in brings its wake-up closer.`);
       }
     }
 

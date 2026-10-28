@@ -73,6 +73,9 @@ OHKOs, who walls), a suggested lead based on usage stats, and warnings (Ditto).
   other traps, Salt Cure, poison...) and how many turns you have left, never tells
   you to switch while you are trapped, and suggests Rapid Spin or Taunt when they
   get you out.
+- **Taunt and sleep**: if the foe has Taunt, it stops offering status answers it
+  would block (Whirlwind and Roar always go after it). When your mon is asleep it
+  shows the odds of waking up this turn, and suggests Sleep Talk or a switch.
 - **Immunities**: types, abilities, items, type changes (Protean, Libero, Soak,
   Trick-or-Treat), and anything that already "doesn't affect" that mon this battle
   (it catches Illusion).

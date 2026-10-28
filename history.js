@@ -398,7 +398,7 @@
   /* Compact copy of what the tool showed at a decision point. */
   function snapshot(battle, req, data) {
     const r = (x) => (typeof x === 'number' ? Math.round(x * 10) / 10 : x);
-    const mon = (m) => m && { name: m.name, hp: r(m.hpPct), boosts: m.boosts || {}, status: m.status || '',
+    const mon = (m) => m && { name: m.name, hp: r(m.hpPct), boosts: Object.assign({}, m.boosts), status: m.status || '',
       ability: m.ability || '', item: m.item || '', tera: m.terastallized || '' };
     const v = data.verdict;
     return {

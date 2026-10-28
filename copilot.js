@@ -1422,6 +1422,8 @@
       ? stallState({ myActive, clientMon: activeOf(mine), foeMon, cand, field, req, ourMoves: out.moves })
       : null;
 
+    out.asleep = myActive ? sleepState(myActive, activeOf(mine), out.moves) : null;
+
     /* ---- team profile (teams.js) ---- */
     out.profile = window.AG_MATCH_TEAM ? window.AG_MATCH_TEAM(myTeam.map((m) => m.name)) : null;
     const roles = out.profile ? profileRoles(out.profile) : null;
@@ -1455,13 +1457,20 @@
           me: myActive, foe: foeMon,
           moves: out.moves, threats: out.threats, switches: out.switches,
           speed: out.speed, myHazards: out.myHazards, inferInfo: out.inferInfo,
-          setupRisk: out.setupRisk, wallRisk: out.wallRisk, stall: out.stall,
+          setupRisk: out.setupRisk, wallRisk: out.wallRisk, stall: out.stall, asleep: out.asleep,
           roles, endgame: out.endgame, hazardPlan: out.hazardPlan
         });
       } catch (e) { out.advice = []; }
     }
 
     out.verdict = verdict(out);
+    // Asleep: the move only goes off if it wakes up first.
+    const zz = out.asleep;
+    if (out.verdict && zz && !zz.sleepTalk && zz.wake < 1 && out.verdict.kind !== 'switch') {
+      out.verdict.why += zz.wake
+        ? ` · asleep: ${Math.round(zz.wake * 100)}% chance it wakes up and hits`
+        : ' · still asleep this turn: the move won\'t go off, but staying in brings its wake-up closer';
+    }
     // Tera rides along with the verdict when it changes the outcome.
     if (out.verdict && out.tera && out.verdict.kind !== 'switch'
       && (out.tera.kind === 'defense' || !out.tera.move || out.tera.move === out.verdict.target)) {
@@ -1700,6 +1709,40 @@
     return any ? pos : null;
   }
 
+  /* Asleep (Gen 9): 1 to 3 turns without moving, drawn evenly; the counter only
+   * goes down on the field. wake = chance it wakes this turn (it then moves). */
+  function sleepState(myActive, clientMon, ourMoves) {
+    if (toID(myActive.status) !== 'slp' || toID(myActive.ability) === 'comatose') return null;
+    const slept = Math.min(3, (clientMon && clientMon.statusData && clientMon.statusData.sleepTurns) || 0);
+    const rest = clientMon && clientMon.lastMove === 'rest';
+    const wake = rest ? (slept >= 2 ? 1 : 0) : [0, 1 / 3, 1 / 2, 1][slept];
+    const has = (id) => ourMoves.some((m) => toID(m.name) === id);
+    return { slept, wake, sleepTalk: has('sleeptalk'), snore: has('snore') };
+  }
+
+  /* Taunt on their side: our status answers may never go off. Whirlwind / Roar are -6,
+   * so his Taunt always lands first; the rest only goes first if we outspeed (no Prankster).
+   * Removes the blocked ids from `have` and says which one was lost. */
+  const TAUNT_PRONE = ['haze', 'encore', 'taunt', 'willowisp', 'thunderwave', 'whirlwind', 'roar'];
+  function tauntBlock(have, ctx) {
+    const { cand, foeRaw, foeMon, myActive, speed } = ctx;
+    if (!cand || !cand.moves.some((mv) => toID(mv) === 'taunt')) return null;
+    if (['oblivious', 'aromaveil'].includes(toID(myActive && myActive.ability))) return null;
+    const seen = seenMoves(foeRaw).some((m) => toID(m) === 'taunt');
+    const weFirst = !!(speed && speed.faster) && toID(foeMon.ability) !== 'prankster';
+    const blocked = [];
+    for (const id of TAUNT_PRONE) {
+      if (!have.has(id)) continue;
+      if (id === 'whirlwind' || id === 'roar' || !weFirst) { have.delete(id); blocked.push(id); }
+    }
+    return blocked.length ? { seen, blocked } : null;
+  }
+  const tauntNote = (tb) => {
+    if (!tb) return '';
+    const md = moveData(tb.blocked[0]);
+    return `. It ${tb.seen ? 'has' : 'may have'} Taunt and goes before ${md ? md.name : tb.blocked[0]}: forget status moves, attack or switch`;
+  };
+
   /* Could the foe boost this turn and then run through us? Simulates the boost
    * on their best hit and picks the cleanest answer we actually have. */
   function setupRisk(ctx) {
@@ -1742,6 +1785,7 @@
 
     // Our usable moves (status ones included) this turn.
     const have = new Set(ourMoves.map((m) => toID(m.name)));
+    const taunted = tauntBlock(have, ctx);
     const first = (ids) => ids.find((id) => have.has(id));
     const nameOf = (id) => { const md = moveData(id); return md ? md.name : id; };
     const foeTypes = foeMon.types || [];
@@ -1793,7 +1837,7 @@
     return {
       move: pick ? pick.move : null, boosts, already, justBoosted, seen,
       boosted, boostedKills, sweep, alive: alive.length,
-      counter, summary: danger + after
+      counter, taunted, summary: danger + after + tauntNote(taunted)
     };
   }
 
@@ -1857,6 +1901,7 @@
     if (!walled) return null;
 
     const have = new Set(ourMoves.map((m) => toID(m.name)));
+    const taunted = tauntBlock(have, ctx);
     const firstOf = (ids) => ids.find((id) => have.has(id));
     const nameOf = (id) => { const md = moveData(id); return md ? md.name : id; };
     const faster = !!(speed && speed.faster);
@@ -1874,8 +1919,8 @@
     const r0 = (x) => Math.round(x);
     const what = already ? `${foeMon.name} already has boosted defenses` : `${foeMon.name} ${seen.includes(toID(pick.move)) ? 'has' : 'may have'} ${pick.move}`;
     const summary = `${what}: ${after ? `your best hit would drop to ${r0(after.hi)}%` : 'you would do nothing to it'}`
-      + (heals ? ', less than it heals back' : '');
-    return { move: pick ? pick.move : null, already, after, heals, counter, summary };
+      + (heals ? ', less than it heals back' : '') + tauntNote(taunted);
+    return { move: pick ? pick.move : null, already, after, heals, counter, taunted, summary };
   }
 
   /* What eats our active every turn (Leech Seed, Sand Tomb & co, Salt Cure, poison...)
@@ -2732,7 +2777,7 @@
   }
 
   /* Errors are logged once each and kept for PACHIRISU.diag(). */
-  const VERSION = '1.15.0';
+  const VERSION = '1.16.0';
   const lastErrors = [];
   function report(where, e) {
     const msg = `${where}: ${(e && e.message) || e}`;
