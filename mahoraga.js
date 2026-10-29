@@ -145,7 +145,7 @@ const RULE_LABEL = {
   'preserve-important': 'preserve an important mon', walled: 'walled -> switch',
   'no-offense': 'no offensive move', 'setup-window': 'setup window', 'forced-switch': 'forced switch (KO)',
   'best-move': 'strongest move (default)', 'anti-setup': 'anti-setup (counter)', endgame: 'endgame (cleaner)', 'hazard-plan': 'hazard plan', 'no-offense-fallback': 'switch for lack of a useful move',
-  'anti-wall': 'defensive anti-setup', 'stall-spin': 'Rapid Spin against stall', 'stall-out': 'leave Leech Seed / trap', 'anti-stall': 'Taunt against stall', 'asleep': 'asleep', 'perish': 'Perish Song', 'perish-foe': 'foe Perish Song', 'choice-locked': 'Choice-locked'
+  'anti-wall': 'defensive anti-setup', 'stall-spin': 'Rapid Spin against stall', 'stall-out': 'leave Leech Seed / trap', 'anti-stall': 'Taunt against stall', 'asleep': 'asleep', 'perish': 'Perish Song', 'perish-foe': 'foe Perish Song', 'choice-locked': 'Choice-locked', 'spent': 'expendable'
 };
 const REASON_LABEL = {
   mvp: 'one of its mons swept you', ignored: 'advice ignored before a KO', setup: 'enemy setup sweep',

@@ -87,6 +87,20 @@ OHKOs, who walls), a suggested lead based on usage stats, and warnings (Ditto).
   Trick-or-Treat), and anything that already "doesn't affect" that mon this battle
   (it catches Illusion).
 
+## Game plan
+
+**At team preview** it reads his style from his likely sets (Baton Pass, stall,
+boosting wall, screens, Trick Room, weather, Last Respects, hazards, sleep, Perish
+Song) and tells you how to play it and who on your team answers it. It lists his win
+conditions: each mon that beats several of yours (after a boost if it has one), with
+your answers (KO, phaze, Unaware, wall) or "no answer", plus the mons to keep (your
+only answer to a threat) and your aces.
+
+**During the battle** the same checks run on what is still alive. The last of your
+mons that stops a threat becomes one to keep: the tool tells you to pull it before a
+big hit, and won't send it into one on a forced switch. A mon that beats nothing left
+becomes expendable. The game plan also shows what must go for your cleaner to sweep.
+
 ## Loss log, dataset and Mahoraga
 
 Every lost battle goes into the **Log** tab with the likely reasons (a mon that
@@ -134,6 +148,7 @@ games and switches track at turn 40.
 |---|---|
 | `copilot.js` | Reads the battle, damage calc, speed, UI |
 | `advisor.js` | The advice rules (each has a stable id for Mahoraga) |
+| `gameplan.js` | Game plan: his style, his win conditions, who to keep |
 | `sets.js`, `sets-meta.js`, `randbats.js` | Set data and inference |
 | `teams.js`, `teams/` | The two meta team profiles and importable teams |
 | `history.js` | Loss log and dataset |

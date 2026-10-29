@@ -141,7 +141,8 @@
     if (!ability && abs.length === 1) ability = sp.abilities[abs[0]];
 
     let hpPct = 100;
-    if (typeof p.hp === 'number' && typeof p.maxhp === 'number' && p.maxhp > 0) {
+    // Not sent out yet: the client keeps hp 0 / maxhp 1000 until it switches in.
+    if (typeof p.hp === 'number' && typeof p.maxhp === 'number' && p.maxhp > 0 && (p.hp > 0 || p.fainted)) {
       hpPct = (p.hp / p.maxhp) * 100;
     }
 
@@ -1006,6 +1007,26 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Game plan (gameplan.js): his style, his win conditions, who stops them */
+  /* ------------------------------------------------------------------ */
+
+  const GP_API = { calcDamage, candidates: foeCandidateMoves, guess: guessFromSets, seen: seenMoves, moveData, selfBoosts, speedOf, outspeeds };
+  const gpCache = new Map();
+  function gamePlan(key, ctx) {
+    if (!window.AG_GAMEPLAN) return null;
+    if (gpCache.has(key)) return gpCache.get(key);
+    let res = null;
+    try { res = window.AG_GAMEPLAN.build(Object.assign({ api: GP_API }, ctx)); } catch (e) { report('plan de match', e); }
+    if (gpCache.size > 30) gpCache.clear();
+    gpCache.set(key, res);
+    return res;
+  }
+  const sleepClauseOn = (battle) => ((battle && battle.stepQueue) || []).some((l) => /^\|rule\|Sleep Clause/i.test(String(l)));
+  const foeTeamOf = (foe, active, activeRaw) => (foe.pokemon || []).filter(Boolean)
+    .map((p) => ({ mon: p === activeRaw && active ? active : readFoe(p), raw: p })).filter((x) => x.mon);
+  const hpKey = (mons) => mons.map((m) => `${m.name}:${Math.round(m.hpPct)}:${m.fainted ? 1 : 0}`).join(',');
+
+  /* ------------------------------------------------------------------ */
   /* Teampreview                                                         */
   /* ------------------------------------------------------------------ */
 
@@ -1109,6 +1130,12 @@
         + 'often with a Choice Scarf to move first. Avoid leading with your best sweeper or a mon that KOs itself.');
     }
 
+    const gpFoes = foeTeamOf(foe, null, null);
+    const gameplan = gamePlan(`${room.id}|preview|${hpKey(myTeam)}|${gpFoes.map((x) => x.mon.name).join(',')}`, {
+      myTeam, foeTeam: gpFoes, field, phase: 'preview', myActive: null, foeActive: null, foeBench: 5,
+      sleepClause: sleepClauseOn(battle)
+    });
+
     return {
       mode: 'teampreview',
       field,
@@ -1117,6 +1144,7 @@
       warnings,
       profile,
       lead,
+      gameplan,
       error: null
     };
   }
@@ -1471,6 +1499,14 @@
     /* ---- end of game ---- */
     out.endgame = endgame({ myTeam, myActive, foe, foeMon, field, profile: out.profile, threats: out.threats, myFainted });
 
+    /* ---- game plan: live threats, who still stops them ---- */
+    const gpFoes = foeTeamOf(foe, foeMon, foeActiveRaw);
+    out.gameplan = gamePlan([room.id, battle.turn, req && req.rqid, hpKey(myTeam), hpKey(gpFoes.map((x) => x.mon)),
+      JSON.stringify(foeMon.boosts || {})].join('|'), {
+      myTeam, foeTeam: gpFoes, field, phase: 'battle', myActive: myActive && myActive.name, foeActive: foeMon.name,
+      foeBench, sleepClause: sleepClauseOn(battle)
+    });
+
     /* ---- hazards on both sides ---- */
     out.hazardPlan = myActive ? hazardPlan({ myActive, mine, foe, threats: out.threats, moves: out.moves, foeBench }) : null;
 
@@ -1485,7 +1521,7 @@
           speed: out.speed, myHazards: out.myHazards, inferInfo: out.inferInfo,
           setupRisk: out.setupRisk, wallRisk: out.wallRisk, stall: out.stall, asleep: out.asleep,
           perish: out.perish, locked: out.locked,
-          roles, endgame: out.endgame, hazardPlan: out.hazardPlan
+          roles, dynRoles: out.gameplan && out.gameplan.roles, endgame: out.endgame, hazardPlan: out.hazardPlan
         });
       } catch (e) { out.advice = []; }
     }
@@ -2026,8 +2062,12 @@
   }
 
   function pickVerdict(out) {
-    // Not straight back to the mon we just pulled out, unless it's the only one that lives.
-    const safe = out.switches.find((s) => !s.dies && !s.justLeft) || out.switches.find((s) => !s.dies) || null;
+    // Not straight back to the mon we just pulled out, unless it's the only one that lives,
+    // and not the last answer to another of his threats into a big hit when someone else can take it.
+    const gpr = (out.gameplan && out.gameplan.roles) || {};
+    const keepFor = (s) => { const r = gpr[toID(s.name)]; return !!r && r.preserve >= 3 && r.threat !== (out.foe && out.foe.name) && s.hi >= 35; };
+    const safe = out.switches.find((s) => !s.dies && !s.justLeft && !keepFor(s))
+      || out.switches.find((s) => !s.dies && !s.justLeft) || out.switches.find((s) => !s.dies) || null;
     const best = out.moves.find((m) => m.kind === 'damage') || null;
     const top = (out.advice || []).find((a) => a.level !== 'warn' && a.score >= 60) || null;
 
@@ -2255,6 +2295,32 @@
       + `<span class="mark" style="left:calc(${m}% - 1px)"></span></div>`;
   }
 
+  /* How one of our mons stops a threat, in a word. */
+  const HOW = { ko: (a) => a.move, phaze: (a) => a.move, unaware: () => 'Unaware', wall: () => 'wall' };
+  function answersHTML(t) {
+    if (t.answers.length) {
+      return 'your answers: ' + t.answers.slice(0, 3).map((a) => `${esc(a.name)} <span class="dim">(${esc((HOW[a.how] || HOW.ko)(a))})</span>`).join(', ');
+    }
+    return `<span style="color:var(--ag-bad)">no answer${t.boost ? ': hit it before it boosts' : ' one-on-one: wear it down before it comes in'}</span>`;
+  }
+  function threatRow(t) {
+    return `<div class="agrisk${t.answers.length ? '' : ' bad'}"><b>${esc(t.name)}</b>${t.boost ? ` <span class="dim">after ${esc(t.boost)}</span>` : ''}`
+      + ` beats ${t.sweeps} of your ${t.of} · ${answersHTML(t)}</div>`;
+  }
+  /* At team preview: his style, his win conditions, who to keep, our aces. */
+  function gamePlanHTML(gp, n) {
+    let h = '';
+    if (gp.styles.length) {
+      h += sec('His plan', gp.styles.map((st) => `<div class="agrisk bad"><b>${esc(st.label)}</b> <span class="dim">(${st.who.map(esc).join(', ')})</span> : ${esc(st.plan)}`
+        + (st.answers.length ? ` <span class="dim">On your side: ${st.answers.map(esc).join(', ')}.</span>` : '') + '</div>').join(''));
+    }
+    if (gp.threats.length) h += sec('His win conditions', gp.threats.slice(0, 4).map(threatRow).join(''));
+    let keep = gp.keep.map((k) => `<div class="agrisk"><b>${esc(k.name)}</b> : ${esc(k.why)}.</div>`).join('');
+    keep += gp.aces.map((a) => `<div class="agrisk"><b>${esc(a.name)}</b> beats ${a.beats.length} of his ${n} <span class="dim">(${a.beats.map(esc).join(', ')})</span></div>`).join('');
+    if (keep) h += sec('Keep these, your aces', keep);
+    return h;
+  }
+
   function teampreviewHTML(data) {
     if (data.error) return `<div class="agc-wait">${esc(data.error)}</div>`;
     const n = data.rows[0].n;
@@ -2282,6 +2348,7 @@
     }
     if (data.profile) h += `<div class="agsub" style="margin-top:6px">Team recognised: ${esc(data.profile.name)}. ${esc(data.profile.plan.early)}</div>`;
     for (const w of (data.warnings || [])) h += sec('Watch out', `<div class="agrisk bad">${esc(w)}</div>`);
+    if (data.gameplan) h += gamePlanHTML(data.gameplan, data.foeNames.length);
 
     const worst = data.rows[data.rows.length - 1];
     if (data.rows.length > 3 && worst.threatened) {
@@ -2338,8 +2405,16 @@
     }
 
     // Team plan (recognised profile) and end-of-game outlook
-    if (data.profile || data.endgame) {
+    const gp = data.gameplan;
+    if (data.profile || data.endgame || (gp && (gp.threats.length || gp.styles.length || gp.keep.length))) {
       let pl = '';
+      if (gp && gp.styles.length) pl += `<div class="agsub" style="margin:0 0 4px">His plan: ${gp.styles.map((st) => esc(st.label)).join(', ')}</div>`;
+      if (gp) pl += gp.threats.slice(0, 3).map(threatRow).join('');
+      if (gp) pl += gp.keep.filter((k) => !me || k.name !== me.name).map((k) => `<div class="agrisk">Keep <b>${esc(k.name)}</b>: ${esc(k.why)}.</div>`).join('');
+      // Our cleaner and what still stands in its way.
+      const eg = data.endgame;
+      const blockers = eg && !eg.clean ? (eg.targets || []).filter((t) => t.hi < t.hp).map((t) => t.name) : [];
+      if (blockers.length) pl += `<div class="agrisk">For ${esc(eg.mon)} to clean up, first remove ${blockers.map(esc).join(', ')}.</div>`;
       if (data.plan && data.plan.job) pl += `<div class="agrisk"><b>${esc(data.plan.name)}</b> : ${esc(data.plan.job)}</div>`;
       if (data.plan && data.plan.text) pl += `<div class="agrisk">${esc(data.plan.text)}</div>`;
       if (data.endgame) pl += `<div class="agrisk${data.endgame.clean ? '' : ' bad'}"><b>Endgame</b>: ${esc(data.endgame.text)}</div>`;
@@ -2845,7 +2920,7 @@
   }
 
   /* Errors are logged once each and kept for PACHIRISU.diag(). */
-  const VERSION = '1.18.0';
+  const VERSION = '1.19.0';
   const lastErrors = [];
   function report(where, e) {
     const msg = `${where}: ${(e && e.message) || e}`;
@@ -2878,7 +2953,7 @@
 
   // Exposed so you can sanity-check a number by hand from the console.
   window.__AG_COPILOT_DEBUG__ = {
-    calcDamage, guessFromSets, soloWin, typeMult, statAt, hpAt, statAt100, hpAt100, speedOf, analyze, renderHTML, historyHTML
+    calcDamage, guessFromSets, soloWin, readFoe, typeMult, statAt, hpAt, statAt100, hpAt100, speedOf, analyze, renderHTML, historyHTML
   };
   window.PACHIRISU = {
     version: VERSION,

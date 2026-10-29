@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "P.A.C.H.I.R.I.S.U.",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "description": "Showdown experience enhancer: every non-blunder play ranked by efficiency, plus cool animations. Not a bot: it never plays.",
   "icons": {
     "16": "icons/icon16.png",
@@ -43,6 +43,7 @@
         "sets-meta.js",
         "teams.js",
         "advisor.js",
+        "gameplan.js",
         "music.js",
         "cinematics.js",
         "mascot.js",

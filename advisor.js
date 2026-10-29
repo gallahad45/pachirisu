@@ -67,8 +67,13 @@
     const best = dmgMoves[0] || null;
     const worstThreat = (ctx.threats || []).find((t) => t.kind === 'damage') || null;
 
-    // A recognised team profile (teams.js) brings its own roles.
-    const role = (ctx.roles && ctx.roles[id(me.name)]) || roleOf(me.name);
+    // A recognised team profile (teams.js) brings its own roles. The game plan
+    // (gameplan.js) overrides them from what is left: the last answer to a live
+    // threat is kept, a mon that beats nothing left can go (unless it's the cleaner).
+    const stat = (ctx.roles && ctx.roles[id(me.name)]) || roleOf(me.name);
+    const dyn = ctx.dynRoles && ctx.dynRoles[id(me.name)];
+    const cleaner = !!(ctx.endgame && ctx.endgame.mon === me.name);
+    const role = dyn && (dyn.preserve > stat.preserve || (dyn.spent && !cleaner)) ? dyn : stat;
     const faster = ctx.speed ? ctx.speed.faster : false;
     // Who acts first depends on the move: priority first, then speed.
     const myPrio = (best && best.priority) || 0;
@@ -128,6 +133,11 @@
     } else if (role.preserve >= 2 && !iMightKO && incoming >= 60) {
       add('preserve-important', 72, 'switch',
         `${me.name} would take ${Math.round(incoming)}% without KOing anything. It is ${role.why}: keep it.`);
+    }
+
+    /* 4b. Il ne bat plus rien de ce qui reste : s'il doit tomber, autant que ce soit lui. */
+    if (role.spent && theyMightKO && !iMightKO) {
+      add('spent', 40, 'warn', `${me.name} beats nothing that is left: if it has to fall, let it fall here rather than expose a useful Pokémon by switching.`);
     }
 
     /* 5. Tu es mure: tu ne fais rien a ce mon. */
