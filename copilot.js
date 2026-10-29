@@ -2072,129 +2072,136 @@
   /* ------------------------------------------------------------------ */
 
   const CSS = `
-  .agc-panel{background:#12151c;color:#e6e9ef;
-    font:13px/1.55 "Avenir Next","Avenir","Segoe UI Variable Text","Segoe UI","Ubuntu","Cantarell","Noto Sans",system-ui,sans-serif;box-sizing:border-box;
+  /* Tokens: light follows Showdown's battle log (#EEF2F5), dark follows html.dark (#333).
+   * Cards, hairlines and mono numbers in the spirit of Showdex. */
+  .agc-panel,.agc-tabs{
+    --ag-bg:#EEF2F5;--ag-card:rgba(255,255,255,.72);--ag-text:#1d1d1f;--ag-text2:rgba(0,0,0,.62);--ag-text3:rgba(0,0,0,.42);
+    --ag-line:rgba(0,0,0,.08);--ag-edge:0 0 1px rgba(0,0,0,.18),0 0 14px rgba(66,66,66,.10);
+    --ag-brand:#1e88e5;--ag-cheek:#f9c74f;--ag-ok:#2e9d4f;--ag-warn:#e08600;--ag-bad:#e53935;--ag-info:#1e88e5;--ag-threat:#8e5bd6;
+    --ag-track:rgba(0,0,0,.08);--ag-tint-ok:rgba(46,157,79,.10);--ag-tint-bad:rgba(229,57,53,.09);--ag-tint-info:rgba(30,136,229,.09);
+    --ag-r:10px;--ag-r-s:4px;
+    --ag-font:"Work Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --ag-mono:"Fira Code","SF Mono",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace}
+  html.dark .agc-panel,html.dark .agc-tabs{
+    --ag-bg:#333333;--ag-card:rgba(18,18,18,.42);--ag-text:#f1f1f1;--ag-text2:rgba(255,255,255,.66);--ag-text3:rgba(255,255,255,.42);
+    --ag-line:rgba(255,255,255,.08);--ag-edge:0 0 1px rgba(255,255,255,.28),0 0 14px rgba(0,0,0,.40);
+    --ag-brand:#64b5f6;--ag-ok:#66bb6a;--ag-warn:#ffb74d;--ag-bad:#ef5350;--ag-info:#64b5f6;--ag-threat:#b39ddb;
+    --ag-track:rgba(255,255,255,.10);--ag-tint-ok:rgba(102,187,106,.12);--ag-tint-bad:rgba(239,83,80,.12);--ag-tint-info:rgba(100,181,246,.10)}
+
+  .agc-panel{background:var(--ag-bg);color:var(--ag-text);font:12px/1.5 var(--ag-font);box-sizing:border-box;
     -webkit-font-smoothing:antialiased}
   .agc-panel *{box-sizing:border-box}
   #agcopilot.agc-panel{position:fixed;top:12px;right:12px;width:340px;z-index:999999;
-    border:1px solid #2a3040;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.5);
-    max-height:88vh;overflow:auto}
+    border-radius:var(--ag-r);box-shadow:var(--ag-edge);max-height:88vh;overflow:auto}
   #agcopilot.collapsed .agc-scroll{display:none}
   .agc-head{display:flex;align-items:center;justify-content:space-between;
-    padding:7px 12px;background:#1a1f2b;border-bottom:1px solid #2a3040;cursor:move;
+    padding:7px 12px;background:var(--ag-bg);border-bottom:1px solid var(--ag-line);cursor:move;
     position:sticky;top:0;z-index:2}
-  .agc-title{font-weight:700;letter-spacing:.3px}
-  .agc-title b{color:#fcd34d}
-  .agc-toggle{cursor:pointer;opacity:.6;padding:0 4px}
-  .agc-toggle:hover{opacity:1}
-  .agc-scroll{padding:12px 14px 14px}
+  .agc-toggle{cursor:pointer;color:var(--ag-text2);padding:0 4px;font-size:11px}
+  .agc-toggle:hover{color:var(--ag-text)}
+  .agc-scroll{padding:12px}
 
   /* dock inside the battle room, over the chat column */
   .agc-dockwrap{position:absolute;inset:0;pointer-events:none;z-index:20}
   .agc-dockwrap > *{pointer-events:auto}
-  .agc-dockpanel{position:absolute;overflow:auto;border-left:1px solid #2a3040}
+  .agc-dockpanel{position:absolute;overflow:auto;border-left:1px solid var(--ag-line)}
   .agc-dockpanel.agc-off{display:none}
-  .agc-dockpanel .agc-scroll{padding-top:46px}
+  .agc-dockpanel .agc-scroll{padding-top:44px}
   .agc-tabs{position:absolute;display:flex;gap:2px;padding:2px;border-radius:999px;
-    background:rgba(18,21,28,.92);border:1px solid #2a3040;box-shadow:0 2px 8px rgba(0,0,0,.35);
-    font:600 12px/1 "Avenir Next","Avenir","Segoe UI Variable Text","Segoe UI","Ubuntu","Cantarell","Noto Sans",system-ui,sans-serif;letter-spacing:.02em}
-  .agc-tabs button{all:unset;cursor:pointer;padding:6px 11px;border-radius:999px;color:#aab4c8}
-  .agc-tabs button:hover{color:#fff}
-  .agc-tabs button.on{background:#fcd34d;color:#1b1b2a}
+    background:var(--ag-bg);box-shadow:var(--ag-edge);font:500 11px/1 var(--ag-font);letter-spacing:.02em}
+  .agc-tabs button{all:unset;cursor:pointer;padding:6px 11px;border-radius:999px;color:var(--ag-text2)}
+  .agc-tabs button:hover{color:var(--ag-text)}
+  .agc-tabs button.on{background:var(--ag-brand);color:#fff}
 
+  /* brand: Pachirisu blue, one yellow cheek */
   .agc-hero{display:flex;align-items:center;gap:10px;margin-bottom:12px}
   .agc-herotext{flex:1;min-width:0}
+  .agc-title{font:700 12px/1.2 var(--ag-font);letter-spacing:.14em;color:var(--ag-brand)}
+  .agc-title:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ag-cheek);margin-right:6px;vertical-align:1px}
+  .agc-acro{color:var(--ag-text3);font-size:10px;line-height:1.35;margin-top:2px}
 
   /* matchup header */
-  .agc-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+  .agc-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:10px 12px;
+    background:var(--ag-card);border-radius:var(--ag-r);box-shadow:var(--ag-edge)}
   .agc-side{min-width:0}
   .agc-side.foe{text-align:right}
-  .agc-mon{display:flex;align-items:center;gap:2px;font-weight:700;font-size:13px;
+  .agc-mon{display:flex;align-items:center;gap:2px;font-weight:600;font-size:12.5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .agc-side.foe .agc-mon{justify-content:flex-end}
-  .agc-vsdot{color:#6b7488;font-size:11px;font-weight:700}
+  .agc-vsdot{color:var(--ag-text3);font-size:10px;font-weight:600;letter-spacing:.08em}
   .agc-ico{display:inline-block;width:40px;height:30px;flex:none;margin:-4px -2px -4px -6px}
-  .agc-hp{height:6px;border-radius:3px;background:#262c3a;overflow:hidden;margin-top:3px}
-  .agc-hp i{display:block;height:100%;border-radius:3px}
-  .agc-hptxt{font-size:11px;color:#8b95ad;margin-top:1px}
-  .agc-boosts{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+  .agc-hp{height:5px;border-radius:var(--ag-r-s);background:var(--ag-track);overflow:hidden;margin-top:4px}
+  .agc-hp i{display:block;height:100%}
+  .agc-hptxt{font:10.5px/1.4 var(--ag-mono);color:var(--ag-text2);margin-top:2px}
+  .agc-boosts{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
   .agc-side.foe .agc-boosts{justify-content:flex-end}
-  .agc-boost{font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px}
-  .agc-boost.up{background:#4c1d1d;color:#fca5a5}
-  .agc-side:not(.foe) .agc-boost.up{background:#14532d;color:#86efac}
-  .agc-boost.down{background:#1f2937;color:#93c5fd}
+  .agc-boost{font:600 10px/1.4 var(--ag-mono);padding:0 4px;border-radius:var(--ag-r-s)}
+  .agc-boost.up{color:var(--ag-bad);background:var(--ag-tint-bad)}
+  .agc-side:not(.foe) .agc-boost.up{color:var(--ag-ok);background:var(--ag-tint-ok)}
+  .agc-boost.down{color:var(--ag-info);background:var(--ag-tint-info)}
 
-  .agsec{margin-top:16px}
-  .aglabel{color:#8b95ad;font-size:11px;font-weight:700;letter-spacing:.7px;
-    text-transform:uppercase;margin-bottom:7px}
+  /* sections are cards */
+  .agsec{margin-top:10px;padding:9px 12px 10px;background:var(--ag-card);border-radius:var(--ag-r);box-shadow:var(--ag-edge)}
+  .aglabel{color:var(--ag-text2);font:600 10px/1 var(--ag-font);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
 
-  /* verdict */
-  .agpick{display:flex;gap:10px;align-items:center;padding:11px 12px;border-radius:8px;
-    background:#1a2230;border:1px solid #2b3a55}
-  .agpick-move{background:linear-gradient(90deg,#163020,#14241a);border-color:#2f6b45}
-  .agpick-switch{background:linear-gradient(90deg,#3a1a1d,#2a1618);border-color:#7a3236}
-  .agpick-setup{background:linear-gradient(90deg,#172743,#1a2230);border-color:#2f5390}
-  .agpick-emoji{font-size:24px;line-height:1}
-  .agpick-main{font-size:17px;font-weight:800;letter-spacing:.2px}
-  .agpick-why{color:#c3cad8;font-size:12px;margin-top:2px}
+  /* verdict: the one thing to read */
+  .agpick{display:block}
+  .agpick-tag{font:600 10px/1 var(--ag-font);letter-spacing:.08em;text-transform:uppercase;color:var(--ag-info)}
+  .agpick-move .agpick-tag{color:var(--ag-ok)}
+  .agpick-switch .agpick-tag{color:var(--ag-bad)}
+  .agpick-main{font:700 21px/1.15 var(--ag-font);letter-spacing:-.01em;margin-top:5px}
+  .agpick-why{color:var(--ag-text2);font-size:12px;margin-top:4px}
+  .agpick-emoji{display:none}
+  .agpick-quip{margin-top:8px;padding-top:7px;border-top:1px solid var(--ag-line);color:var(--ag-text3);font-size:11px}
+  .agpick-quip:before{content:"Pachirisu: ";color:var(--ag-brand);font-weight:600}
 
   /* rows */
-  .agc-row{padding:7px 0}
-  .agc-row + .agc-row{border-top:1px solid #1e2330}
-  .agc-rowtop{display:flex;align-items:center;gap:7px}
-  .agc-rank{color:#6b7488;font-size:11px;font-weight:700;min-width:16px}
-  .agc-rank.top{color:#fcd34d}
-  .agname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-  .agnum{font-variant-numeric:tabular-nums;white-space:nowrap;color:#aab4c8}
-  .agsub{color:#8b95ad;font-size:12px;margin-top:2px}
-  .agc-type{font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;
-    padding:2px 6px;border-radius:4px;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.45);flex:none}
-  .agc-eff{font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;flex:none}
-  .agc-eff.up{background:#14532d;color:#86efac}
-  .agc-eff.down{background:#3b2a12;color:#fcd34d}
-  .agc-pill{font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;flex:none}
-  .agc-pill.ko{background:#4ade80;color:#0b2414}
-  .agc-pill.maybe{background:#fbbf24;color:#2a1d02}
-  .agc-pill.bad{background:#f87171;color:#2a0b0b}
-  .agc-pill.safe{background:#60a5fa;color:#0b1a2e}
-  .agc-bar{position:relative;height:7px;border-radius:4px;background:#262c3a;margin-top:6px;overflow:hidden}
+  .agc-row{padding:6px 0}
+  .agc-row + .agc-row{border-top:1px solid var(--ag-line)}
+  .agc-rowtop{display:flex;align-items:center;gap:6px}
+  .agc-rank{color:var(--ag-text3);font:500 10.5px/1 var(--ag-mono);min-width:12px}
+  .agc-rank.top{color:var(--ag-text)}
+  .agname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  .agnum{font:500 11px/1 var(--ag-mono);white-space:nowrap;color:var(--ag-text)}
+  .agsub{color:var(--ag-text2);font-size:11px;margin-top:4px}
+  .agc-type{font:600 9px/1 var(--ag-font);letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 5px;border-radius:var(--ag-r-s);color:#fff;flex:none}
+  .agc-eff{font:600 10px/1 var(--ag-mono);flex:none}
+  .agc-eff.up{color:var(--ag-ok)}
+  .agc-eff.down{color:var(--ag-warn)}
+  /* "pills" are just coloured words now */
+  .agc-pill{font:600 10px/1 var(--ag-font);letter-spacing:.04em;text-transform:uppercase;flex:none;white-space:nowrap}
+  .agc-pill.ko{color:var(--ag-ok)}
+  .agc-pill.maybe{color:var(--ag-warn)}
+  .agc-pill.bad{color:var(--ag-bad)}
+  .agc-pill.safe{color:var(--ag-text3)}
+  .agc-bar{position:relative;height:4px;border-radius:var(--ag-r-s);background:var(--ag-track);margin-top:5px;overflow:hidden}
   .agc-bar .lo,.agc-bar .hi{position:absolute;top:0;bottom:0;left:0}
-  .agc-bar .hi{opacity:.4}
-  .agc-bar .mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff;opacity:.8}
-  .agrisk{padding:5px 0 5px 16px;position:relative;color:#d7dce6}
-  .agrisk:before{content:"";position:absolute;left:3px;top:12px;width:6px;height:6px;
-    border-radius:50%;background:#fbbf24}
-  .agrisk.bad:before{background:#f87171}
-  .dim{color:#6b7488}
-  .agfoot{color:#6b7488;font-size:11px;margin-top:16px;line-height:1.4}
-  .agerr{color:#f87171;padding:4px 0}
-  .agc-title{font-weight:800;letter-spacing:1.2px;color:#fcd34d;font-size:15px}
-  .agc-acro{color:#8b95ad;font-size:10.5px;line-height:1.35;margin-top:1px}
-  .aglabel,.agc-title,.agpick-main,.agc-pet-name{font-family:"Avenir Next Condensed","Futura","Bahnschrift SemiCondensed","Bahnschrift","Ubuntu Condensed","DejaVu Sans Condensed","Liberation Sans Narrow","Arial Narrow",sans-serif;font-style:italic}
-  .aglabel{font-weight:800;letter-spacing:.12em}
-  .agnum,.agc-stats b{font-family:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;font-size:12px}
-  .agpick-tag{font:800 italic 11px/1 "Avenir Next Condensed","Futura","Bahnschrift SemiCondensed","Bahnschrift","Ubuntu Condensed","DejaVu Sans Condensed","Liberation Sans Narrow","Arial Narrow",sans-serif;letter-spacing:.14em;padding:5px 7px;
-    border-radius:4px;background:rgba(255,255,255,.08);color:#e6e9ef;align-self:flex-start;margin-top:3px;white-space:nowrap}
-  .agpick-move .agpick-tag{background:#14532d;color:#86efac}
-  .agpick-switch .agpick-tag{background:#7f1d1d;color:#fecaca}
-  .agpick-setup .agpick-tag{background:#1e3a8a;color:#bfdbfe}
+  .agc-bar .hi{opacity:.35}
+  .agc-bar .mark{position:absolute;top:0;bottom:0;width:2px;background:var(--ag-text);opacity:.7}
+  .agrisk{padding:4px 0 4px 12px;position:relative;color:var(--ag-text)}
+  .agrisk:before{content:"";position:absolute;left:1px;top:11px;width:5px;height:5px;border-radius:50%;background:var(--ag-warn)}
+  .agrisk.bad:before{background:var(--ag-bad)}
+  .dim{color:var(--ag-text3)}
+  .agfoot{color:var(--ag-text3);font-size:10.5px;margin-top:12px;line-height:1.4}
+  .agerr{color:var(--ag-bad);padding:4px 0}
   .agc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .agc-stats div{background:#1a1f2b;border:1px solid #262c3a;border-radius:8px;padding:8px 6px;text-align:center}
-  .agc-stats b{display:block;font-size:18px;color:#fcd34d}
-  .agc-stats span{font-size:10.5px;color:#8b95ad;line-height:1.2;display:block}
-  .agc-loss{border:1px solid #262c3a;border-radius:8px;margin-bottom:6px;background:#161a24}
-  .agc-loss summary{list-style:none;cursor:pointer;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+  .agc-stats div{border-radius:var(--ag-r-s);padding:6px 4px;text-align:center}
+  .agc-stats b{display:block;font:600 18px/1.2 var(--ag-mono);color:var(--ag-text)}
+  .agc-stats span{font-size:10px;color:var(--ag-text2);line-height:1.2;display:block}
+  .agc-loss{border-top:1px solid var(--ag-line)}
+  .agc-loss:first-child{border-top:0}
+  .agc-loss summary{list-style:none;cursor:pointer;padding:7px 0;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
   .agc-loss summary::-webkit-details-marker{display:none}
   .agc-loss summary .agsub{flex-basis:100%;margin:0}
-  .agc-loss[open] summary{border-bottom:1px solid #262c3a}
-  .agc-lossdate{color:#6b7488;font-size:11px;font-variant-numeric:tabular-nums}
-  .agc-lossbody{padding:6px 10px 10px}
-  .agc-btns{display:flex;gap:8px;margin-top:14px}
-  .agc-btn{all:unset;cursor:pointer;font-size:12px;font-weight:700;padding:7px 11px;border-radius:7px;
-    background:#1f2533;color:#d7dce6;border:1px solid #2f3a55}
-  .agc-btn:hover{background:#273046}
-  .agc-btn.danger{color:#fca5a5;border-color:#5a2a2e}
-  .agc-wait{color:#8b95ad;padding:8px 0}
+  .agc-lossdate{color:var(--ag-text3);font:10.5px/1 var(--ag-mono)}
+  .agc-lossbody{padding:0 0 8px}
+  .agc-btns{display:flex;gap:8px;margin-top:12px}
+  .agc-btn{all:unset;cursor:pointer;font:500 11px/1 var(--ag-font);padding:7px 10px;border-radius:999px;
+    color:var(--ag-text);background:var(--ag-card);box-shadow:var(--ag-edge)}
+  .agc-btn:hover{color:var(--ag-brand)}
+  .agc-btn.danger{color:var(--ag-bad)}
+  .agc-wait{color:var(--ag-text2);padding:8px 0}
   `;
 
   const TYPE_COLORS = {
@@ -2234,7 +2241,7 @@
     return parts.length ? `<div class="agc-boosts">${parts.join('')}</div>` : '';
   }
 
-  function hpColor(p) { return p > 50 ? '#4ade80' : p > 20 ? '#fbbf24' : '#f87171'; }
+  function hpColor(p) { return p > 50 ? 'var(--ag-ok)' : p > 20 ? 'var(--ag-warn)' : 'var(--ag-bad)'; }
   function hpBar(p) {
     const v = Math.max(0, Math.min(100, p || 0));
     return `<div class="agc-hp"><i style="width:${v}%;background:${hpColor(v)}"></i></div>`;
@@ -2258,7 +2265,7 @@
     data.rows.slice(0, 3).forEach((r, i) => {
       const bits = [`outspeeds ${r.faster}/${n}`];
       if (r.threatens) bits.push(`can OHKO ${r.threatens}`);
-      bits.push(r.threatened ? `<span style="color:#f87171">OHKO'd by ${r.threatened}</span>` : 'no OHKO taken');
+      bits.push(r.threatened ? `<span style="color:var(--ag-bad)">OHKO'd by ${r.threatened}</span>` : 'no OHKO taken');
       if (r.immuneTo.length) bits.push(`walls ${r.immuneTo.map(esc).join(', ')}`);
       leads += `<div class="agc-row"><div class="agc-rowtop">
           <span class="agc-rank${i === 0 ? ' top' : ''}">#${i + 1}</span>${icon(r.name)}
@@ -2287,6 +2294,19 @@
 
   const TAG = { move: 'ATTACK', switch: 'SWITCH', setup: 'BOOST' };
 
+  /* Pachirisu's two cents under the verdict: insolent, sarcastic, still useful. */
+  function quip(data) {
+    const v = data.verdict;
+    const top = (data.moves || []).find((m) => m.kind === 'damage');
+    if (data.asleep && data.asleep.wake < 1) return 'It\'s snoring. Use the time to think.';
+    if (data.forced) return 'Choose well, this isn\'t a lottery.';
+    if (v.kind === 'switch') return 'We\'re out. Not cowardice, strategy.';
+    if (v.kind === 'setup') return 'Boost. Make it regret showing up.';
+    if (top && top.name === v.target && top.koGuaranteed) return 'Guaranteed KO. Even you can\'t miss this.';
+    if (top && top.name === v.target && top.koPossible) return 'It works if the dice are nice.';
+    return 'Hit. Hard. No questions.';
+  }
+
   function renderHTML(data) {
     if (data.mode === 'teampreview') return teampreviewHTML(data);
     if (data.error && !data.foe) return `<div class="agc-wait">${esc(data.error)}</div>`;
@@ -2313,7 +2333,8 @@
         <div class="agpick-tag">${TAG[v.kind] || ''}</div>
         <div><div class="agpick-main">${esc(v.text)}${v.tera ? ` <span class="agc-pill safe">+ Tera ${esc(v.tera)}</span>` : ''}</div>
         <div class="agpick-why">${esc(v.why)}</div>
-        ${data.tera ? `<div class="agpick-why" style="margin-top:4px">${esc(data.tera.why)}</div>` : ''}</div></div>`);
+        ${data.tera ? `<div class="agpick-why" style="margin-top:4px">${esc(data.tera.why)}</div>` : ''}
+        <div class="agpick-quip">${esc(quip(data))}</div></div></div>`);
     }
 
     // Team plan (recognised profile) and end-of-game outlook
@@ -2348,7 +2369,7 @@
           : m.koPossible ? `<span class="agc-pill maybe">KO ?${m.sash ? ' ' + esc(m.sash) : ''}</span>`
           : m.sash ? `<span class="agc-pill safe">${esc(m.sash)}</span>` : '';
         const pri = m.priority > 0 ? ` <span class="dim">prio +${m.priority}</span>` : '';
-        const color = m.koGuaranteed ? '#4ade80' : m.koPossible ? '#fbbf24' : '#60a5fa';
+        const color = m.koGuaranteed ? 'var(--ag-ok)' : m.koPossible ? 'var(--ag-warn)' : 'var(--ag-info)';
         mv += `<div class="agc-row"><div class="agc-rowtop">
             <span class="agc-rank${i === 0 ? ' top' : ''}">${i + 1}</span>${typeChip(m.type)}
             <span class="agname">${esc(m.name)}${pri}</span>${effChip(m.eff)}
@@ -2371,7 +2392,7 @@
       risks += `<div class="agc-row"><div class="agc-rowtop">${typeChip(t.type)}
           <span class="agname">${esc(t.name)}</span>${effChip(t.eff)}
           <span class="agnum">${pct(t.lo)}-${pct(t.hi)}%</span>${pill}</div>
-        ${me ? dmgBar(t.lo, t.hi, me.hpPct, t.kills ? '#f87171' : '#a78bfa') : ''}</div>`;
+        ${me ? dmgBar(t.lo, t.hi, me.hpPct, t.kills ? 'var(--ag-bad)' : 'var(--ag-threat)') : ''}</div>`;
     }
     if (data.speed && data.speed.foeWorst === data.speed.mine) {
       risks += `<div class="agrisk">Possible speed tie (${data.speed.mine}): 50/50 on who moves first</div>`;
@@ -2824,7 +2845,7 @@
   }
 
   /* Errors are logged once each and kept for PACHIRISU.diag(). */
-  const VERSION = '1.17.0';
+  const VERSION = '1.18.0';
   const lastErrors = [];
   function report(where, e) {
     const msg = `${where}: ${(e && e.message) || e}`;

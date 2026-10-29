@@ -81,6 +81,8 @@ OHKOs, who walls), a suggested lead based on usage stats, and warnings (Ditto).
   Defense boosts; Perish Song count with a switch on the last turn; Choice lock
   flagged with a switch when the locked move is useless; physical hits on a Toxic
   Debris Glimmora are marked.
+- **Look**: the panel follows Showdown's light / dark theme, with plain cards in the
+  spirit of Showdex, mono numbers, a big verdict and a line from Pachirisu under it.
 - **Immunities**: types, abilities, items, type changes (Protean, Libero, Soak,
   Trick-or-Treat), and anything that already "doesn't affect" that mon this battle
   (it catches Illusion).
