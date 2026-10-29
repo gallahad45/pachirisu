@@ -361,6 +361,8 @@
   }
 
   /* Returns {min, max} damage as a percentage of the defender's max HP. */
+  const HALF_HP = ['ruination', 'superfang', 'naturesmadness'];
+
   function calcDamage(opts) {
     const {
       move, atk, def, field,
@@ -404,7 +406,9 @@
     if (mid === 'lastrespects') power = 50 + 50 * clamp(foeFaintedCount || 0, 0, 100);
     if (mid === 'ragefist') power = Math.min(350, 50 + 50 * (atk.timesAttacked || 0));
     if (mid === 'heavyslam' || mid === 'heatcrash') power = heavySlamPower(atk.weightkg, def.weightkg);
-    if (power <= 0) return { nonDamaging: true, name: md.name };
+    // Fixed damage: half its current HP, or the user's level. Boosts and items don't touch it.
+    const fixed = HALF_HP.includes(mid) ? 'half' : (md.damage === 'level' ? 'level' : '');
+    if (power <= 0 && !fixed) return { nonDamaging: true, name: md.name };
 
     // Always-crit moves (Wicked Blow, Surging Strikes, Flower Trick...): x1.5,
     // ignore our Atk drops, their Def boosts and screens. Blocked by Shell/Battle Armor.
@@ -503,6 +507,12 @@
     // Psychic Terrain blocks priority moves aimed at a grounded target.
     if (terrain === 'psychicterrain' && (md.priority || 0) > 0 && defGrounded) {
       return { immune: true, name: md.name, reason: 'Psychic Terrain' };
+    }
+    if (fixed) {
+      const hpNow = def.hpPct == null ? 100 : def.hpPct;
+      const pct = fixed === 'half' ? Math.max(100 / maxHP, hpNow / 2) : ((atk.level || 100) / maxHP) * 100;
+      return { name: md.name, type: mType, eff: 1, priority: md.priority || 0, category: md.category,
+        power: 0, fixed, multiHit: false, crit: false, disguise: false, minPct: pct, maxPct: pct };
     }
 
     // --- base power modifiers ---
@@ -1297,8 +1307,21 @@
           hi: frail ? frail.maxPct : bulky.maxPct,
           koGuaranteed,
           koPossible,
-          sash: sash ? sash.what : null
+          sash: sash ? sash.what : null,
+          category: bulky.category,
+          fixed: bulky.fixed || ''
         });
+      }
+
+      // Toxic Debris: every physical hit on it lays Toxic Spikes on our side (2 layers max).
+      const tsp = (mine.sideConditions || {}).toxicspikes;
+      if (toID(foeMon.ability) === 'toxicdebris' && (tsp ? tsp[1] || 1 : 0) < 2) {
+        for (const m of out.moves) if (m.kind === 'damage' && m.category === 'Physical') m.debris = true;
+      }
+      // Choice item: the request only leaves the locked move clickable.
+      if (CHOICE_ITEMS.includes(toID(myActive.item)) && usable.length === 1 && myActive.moves.length > 1) {
+        const md = moveData(usable[0]);
+        out.locked = { move: md ? md.name : usable[0], item: myActive.item };
       }
 
       out.moves.sort((a, b) => {
@@ -1410,12 +1433,14 @@
     out.switches.sort((a, b) => b.score - a.score);
 
     /* ---- anti-setup ---- */
+    // Whirlwind / Roar fail on its last mon: nobody to drag in.
+    const foeBench = Math.max(0, (foe.totalPokemon || 6) - foeFainted - 1);
     out.setupRisk = myActive
-      ? setupRisk({ myActive, myTeam, foeMon, foeRaw: foeActiveRaw, cand, field, foeFainted,
+      ? setupRisk({ myActive, myTeam, foeMon, foeRaw: foeActiveRaw, cand, field, foeFainted, foeBench,
         ourMoves: out.moves, switches: out.switches, threats: out.threats, speed: out.speed })
       : null;
     out.wallRisk = myActive
-      ? wallRisk({ myActive, myTeam, foeMon, foeRaw: foeActiveRaw, cand, field, myFainted,
+      ? wallRisk({ myActive, myTeam, foeMon, foeRaw: foeActiveRaw, cand, field, myFainted, foeBench,
         ourMoves: out.moves, switches: out.switches, speed: out.speed })
       : null;
     out.stall = myActive
@@ -1423,6 +1448,7 @@
       : null;
 
     out.asleep = myActive ? sleepState(myActive, activeOf(mine), out.moves) : null;
+    out.perish = { mine: perishOf(activeOf(mine)), foe: perishOf(foeActiveRaw) };
 
     /* ---- team profile (teams.js) ---- */
     out.profile = window.AG_MATCH_TEAM ? window.AG_MATCH_TEAM(myTeam.map((m) => m.name)) : null;
@@ -1446,7 +1472,7 @@
     out.endgame = endgame({ myTeam, myActive, foe, foeMon, field, profile: out.profile, threats: out.threats, myFainted });
 
     /* ---- hazards on both sides ---- */
-    out.hazardPlan = myActive ? hazardPlan({ myActive, mine, foe, threats: out.threats, moves: out.moves }) : null;
+    out.hazardPlan = myActive ? hazardPlan({ myActive, mine, foe, threats: out.threats, moves: out.moves, foeBench }) : null;
 
     /* ---- advisor ---- */
     out.myHazards = (mine && mine.sideConditions) || {};
@@ -1458,6 +1484,7 @@
           moves: out.moves, threats: out.threats, switches: out.switches,
           speed: out.speed, myHazards: out.myHazards, inferInfo: out.inferInfo,
           setupRisk: out.setupRisk, wallRisk: out.wallRisk, stall: out.stall, asleep: out.asleep,
+          perish: out.perish, locked: out.locked,
           roles, endgame: out.endgame, hazardPlan: out.hazardPlan
         });
       } catch (e) { out.advice = []; }
@@ -1677,7 +1704,8 @@
     for (const [mv, label] of [['defog', 'Defog'], ['rapidspin', 'Rapid Spin'], ['mortalspin', 'Mortal Spin'], ['tidyup', 'Tidy Up']]) {
       if (mine2 >= 2 && has(mv) && incoming < 60) return { kind: 'clear', moveName: label, why: `${mine2} hazards on your side: ${label} clears them.` };
     }
-    if (!safe) return null;
+    // Hazards only hurt what switches in: useless on its last mon.
+    if (!safe || ctx.foeBench === 0) return null;
     if (has('stealthrock') && !foeSc.stealthrock) return { kind: 'set', moveName: 'Stealth Rock', why: 'It doesn\'t threaten you: set Stealth Rock.' };
     const layers = foeSc.spikes ? (foeSc.spikes[1] || 1) : 0;
     if (has('spikes') && layers < 3) return { kind: 'set', moveName: 'Spikes', why: `It doesn\'t threaten you: Spikes layer ${layers + 1}.` };
@@ -1708,6 +1736,16 @@
     for (const k of ['atk', 'spa', 'spe']) if (md.boosts[k] > 0) { pos[k] = md.boosts[k]; any = true; }
     return any ? pos : null;
   }
+
+  /* Perish Song: the client keeps the count as a "perish3" .. "perish0" volatile.
+   * N = turns left; at 1 it faints at the end of this turn. */
+  function perishOf(clientMon) {
+    const vol = (clientMon && clientMon.volatiles) || {};
+    for (let n = 0; n <= 3; n++) if (vol['perish' + n]) return n;
+    return null;
+  }
+
+  const CHOICE_ITEMS = ['choicescarf', 'choiceband', 'choicespecs'];
 
   /* Asleep (Gen 9): 1 to 3 turns without moving, drawn evenly; the counter only
    * goes down on the field. wake = chance it wakes this turn (it then moves). */
@@ -1743,10 +1781,17 @@
     return `. It ${tb.seen ? 'has' : 'may have'} Taunt and goes before ${md ? md.name : tb.blocked[0]}: forget status moves, attack or switch`;
   };
 
+  const lastMonNote = (have, foeBench) => {
+    const ph = ['whirlwind', 'roar'].find((id) => have.has(id));
+    if (foeBench !== 0 || !ph) return '';
+    const md = moveData(ph);
+    return `. It is its last Pokémon: ${md ? md.name : ph} fails, hit with what ignores its boosts`;
+  };
+
   /* Could the foe boost this turn and then run through us? Simulates the boost
    * on their best hit and picks the cleanest answer we actually have. */
   function setupRisk(ctx) {
-    const { myActive, myTeam, foeMon, foeRaw, cand, field, foeFainted, ourMoves, switches, threats, speed } = ctx;
+    const { myActive, myTeam, foeMon, foeRaw, cand, field, foeFainted, ourMoves, switches, threats, speed, foeBench } = ctx;
     const cur = foeMon.boosts || {};
     const already = ['atk', 'spa', 'spe'].some((k) => (cur[k] || 0) > 0);
 
@@ -1799,7 +1844,7 @@
     //  - against an already boosted foe, Haze / phaze need us to survive his hit
     //    (phazing moves are -6, they always go last).
     // Against evasion boosts, keep only phazing that can't miss (Whirlwind, Roar).
-    const phaze = (cur.evasion || 0) > 0 ? ['whirlwind', 'roar'] : PHAZE;
+    const phaze = foeBench === 0 ? [] : (cur.evasion || 0) > 0 ? ['whirlwind', 'roar'] : PHAZE;
     const faster = !!(speed && speed.faster);
     const killedNow = (threats || []).some((t) => t.kind === 'damage' && t.kills);
     const actsInTime = faster || !killedNow;
@@ -1837,7 +1882,7 @@
     return {
       move: pick ? pick.move : null, boosts, already, justBoosted, seen,
       boosted, boostedKills, sweep, alive: alive.length,
-      counter, taunted, summary: danger + after + tauntNote(taunted)
+      counter, taunted, summary: danger + after + tauntNote(taunted) + lastMonNote(have, foeBench)
     };
   }
 
@@ -1867,7 +1912,7 @@
    * boost on our best hit. Answers: Haze / phaze / Encore / Taunt, an Unaware switch,
    * or a move that ignores the boost (crit moves, Sacred Sword, Psyshock vs SpD). */
   function wallRisk(ctx) {
-    const { myActive, myTeam, foeMon, foeRaw, cand, field, myFainted, ourMoves, switches, speed } = ctx;
+    const { myActive, myTeam, foeMon, foeRaw, cand, field, myFainted, ourMoves, switches, speed, foeBench } = ctx;
     if (!myActive || !foeMon) return null;
     const cur = foeMon.boosts || {};
     let pick = null;
@@ -1910,7 +1955,7 @@
     let counter = null;
     const move = (id, why) => { counter = { kind: 'move', name: nameOf(id), why }; };
     if ((already || justBoosted) && firstOf(HAZE)) move(firstOf(HAZE), `${nameOf(firstOf(HAZE))} wipes its defensive boosts.`);
-    else if ((already || justBoosted) && firstOf(PHAZE)) move(firstOf(PHAZE), `${nameOf(firstOf(PHAZE))} sends it back, boosts and all.`);
+    else if ((already || justBoosted) && foeBench !== 0 && firstOf(PHAZE)) move(firstOf(PHAZE), `${nameOf(firstOf(PHAZE))} sends it back, boosts and all.`);
     else if (justBoosted && faster && have.has('encore')) move('encore', 'Encore locks it into its boost: it can neither attack nor heal.');
     else if (have.has('taunt') && (faster || !already)) move('taunt', 'Taunt: no boosting or healing for 3 turns.');
     else if (through && through.hi >= limit) move(toID(through.name), `${through.name} goes right through its boosts.`);
@@ -1919,7 +1964,7 @@
     const r0 = (x) => Math.round(x);
     const what = already ? `${foeMon.name} already has boosted defenses` : `${foeMon.name} ${seen.includes(toID(pick.move)) ? 'has' : 'may have'} ${pick.move}`;
     const summary = `${what}: ${after ? `your best hit would drop to ${r0(after.hi)}%` : 'you would do nothing to it'}`
-      + (heals ? ', less than it heals back' : '') + tauntNote(taunted);
+      + (heals ? ', less than it heals back' : '') + tauntNote(taunted) + lastMonNote(have, foeBench);
     return { move: pick ? pick.move : null, already, after, heals, counter, taunted, summary };
   }
 
@@ -2307,11 +2352,13 @@
         mv += `<div class="agc-row"><div class="agc-rowtop">
             <span class="agc-rank${i === 0 ? ' top' : ''}">${i + 1}</span>${typeChip(m.type)}
             <span class="agname">${esc(m.name)}${pri}</span>${effChip(m.eff)}
-            <span class="agnum">${pct(m.lo)}-${pct(m.hi)}%</span>${pill}${order(m)}</div>
+            <span class="agnum">${pct(m.lo)}-${pct(m.hi)}%</span>${pill}${order(m)}${m.debris ? ' <span class="agc-pill maybe">T-Spikes on you</span>' : ''}</div>
           ${dmgBar(m.lo, m.hi, foe.hpPct, color)}</div>`;
       });
       const immune = other.filter((m) => m.kind === 'immune').map((m) => esc(m.name));
       if (immune.length) mv += `<div class="agsub">Useless here: ${immune.join(', ')} (immune)</div>`;
+      if (dmg.some((m) => m.debris)) mv += `<div class="agsub">Toxic Debris: every physical hit on ${esc(foe.name)} lays Toxic Spikes on your side.</div>`;
+      if (data.locked) mv += `<div class="agsub">Locked into ${esc(data.locked.move)} by ${esc(data.locked.item)} while it stays in.</div>`;
       if (!mv) mv = '<div class="dim">No readable moves.</div>';
       h += sec('Your moves', mv);
     }
@@ -2777,7 +2824,7 @@
   }
 
   /* Errors are logged once each and kept for PACHIRISU.diag(). */
-  const VERSION = '1.16.0';
+  const VERSION = '1.17.0';
   const lastErrors = [];
   function report(where, e) {
     const msg = `${where}: ${(e && e.message) || e}`;

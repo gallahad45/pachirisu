@@ -76,6 +76,11 @@ OHKOs, who walls), a suggested lead based on usage stats, and warnings (Ditto).
 - **Taunt and sleep**: if the foe has Taunt, it stops offering status answers it
   would block (Whirlwind and Roar always go after it). When your mon is asleep it
   shows the odds of waking up this turn, and suggests Sleep Talk or a switch.
+- **Endgame details**: no phazing or hazards against its last Pokémon; fixed-damage
+  moves (Ruination, Super Fang, Seismic Toss...) are calculated and go through
+  Defense boosts; Perish Song count with a switch on the last turn; Choice lock
+  flagged with a switch when the locked move is useless; physical hits on a Toxic
+  Debris Glimmora are marked.
 - **Immunities**: types, abilities, items, type changes (Protean, Libero, Soak,
   Trick-or-Treat), and anything that already "doesn't affect" that mon this battle
   (it catches Illusion).

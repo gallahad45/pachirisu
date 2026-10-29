@@ -245,6 +245,31 @@
       }
     }
 
+    /* 16. Perish Song: le compte a rebours disparait au banc. */
+    const pe = ctx.perish || {};
+    const trapped = !!(ctx.stall && ctx.stall.trapped);
+    if (pe.mine === 1 && !trapped) {
+      add('perish', 95, 'switch', `Perish Song: ${me.name} faints at the end of the turn. Switch now, the count is cleared on the bench.`);
+    } else if (pe.mine === 1) {
+      add('perish', 70, 'warn', `Perish Song: ${me.name} faints at the end of the turn and you are trapped. Deal as much damage as you can.`);
+    } else if (pe.mine === 2 || pe.mine === 3) {
+      add('perish', 55, 'warn', `Perish Song: ${me.name} faints in ${pe.mine} turns if it stays in. Switch before the end.`);
+    }
+    if (pe.foe === 1 && pe.mine == null) {
+      add('perish-foe', 50, 'warn', `${foe.name} faints at the end of the turn (Perish Song) unless it switches.`);
+    }
+
+    /* 17. Bloque par un Choice sur un coup qui ne sert plus. */
+    const lk = ctx.locked;
+    if (lk) {
+      const m = (ctx.moves || []).find((x) => x.name === lk.move);
+      const useless = !m || m.kind === 'immune' || (m.kind === 'damage' && !m.koPossible && m.hi < 30);
+      const sw = (ctx.switches || []).find((x) => !x.dies && !x.justLeft);
+      if (useless && sw) {
+        add('choice-locked', 82, 'switch', `Locked into ${lk.move} by ${lk.item}${m && m.kind === 'damage' ? ` (${Math.round(m.hi)} % max)` : ''}: switch to unlock.`, { target: sw.name });
+      }
+    }
+
     out.sort((a, b) => b.score - a.score);
     return out;
   };
